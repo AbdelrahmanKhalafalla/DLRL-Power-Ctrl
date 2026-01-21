@@ -1,5 +1,5 @@
 import gymnasium
-from gymnasium import spaces 
+from gymnasium import spaces
 from singleLinkEnv import wirelessPowerEnv
 import numpy as np
 import matplotlib.pyplot as plt
@@ -9,7 +9,7 @@ env = wirelessPowerEnv()
 
 # ------- Q-learning parameters-----#####
 episodes = 500
-steps_per_episode= 50
+steps_per_episode = 50
 Alpha = 0.1 # learning rate
 Gamma = 0.9 # discount factor
 epsilon = 1.0 # initial
@@ -71,12 +71,13 @@ plt.title("Reward Convergence Over Training")
 plt.legend()
 plt.grid(True)
 
-# Create simulationimages folder if it doesn't exist
-os.makedirs("simulationimages", exist_ok=True)
+# Create simulationImages/Q-Learning folder if it doesn't exist
+os.makedirs("Q-Learning", exist_ok=True)
 
 # Save the plot
-plt.savefig("simulationimages/reward_convergence.png", dpi=300, bbox_inches="tight")
-print(f"\nPlot saved to simulationimages/reward_convergence.png")
+plot_path = "Q-Learning/reward_convergence.png"
+plt.savefig(plot_path, dpi=300, bbox_inches="tight")
+print(f"\nPlot saved to {plot_path}")
 print(Q)
 plt.show()
 
