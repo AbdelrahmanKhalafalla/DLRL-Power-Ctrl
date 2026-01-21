@@ -59,7 +59,6 @@ for episode in range(episodes):
 print("\nLearned Q-table:")
 rewards = episode_rewards
 
-# Optional: smooth with a moving average
 window = 10
 smoothed = np.convolve(rewards, np.ones(window) / window, mode="valid")
 
@@ -71,11 +70,8 @@ plt.title("Reward Convergence Over Training")
 plt.legend()
 plt.grid(True)
 
-# Create simulationImages/Q-Learning folder if it doesn't exist
-os.makedirs("Q-Learning", exist_ok=True)
-
 # Save the plot
-plot_path = "Q-Learning/reward_convergence.png"
+plot_path = r"C:\Users\abdel\OneDrive\Desktop\Wireless Systems\DLRL-Power-Ctrl\simulationImages\Q-Learning\reward_convergence.png"
 plt.savefig(plot_path, dpi=300, bbox_inches="tight")
 print(f"\nPlot saved to {plot_path}")
 print(Q)
