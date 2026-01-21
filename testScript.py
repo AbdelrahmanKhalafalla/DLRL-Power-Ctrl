@@ -3,6 +3,7 @@ from gymnasium import spaces
 from singleLinkEnv import wirelessPowerEnv
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 
 env = wirelessPowerEnv()
 
@@ -69,6 +70,14 @@ plt.ylabel("Total Reward")
 plt.title("Reward Convergence Over Training")
 plt.legend()
 plt.grid(True)
+
+# Create simulationimages folder if it doesn't exist
+os.makedirs("simulationimages", exist_ok=True)
+
+# Save the plot
+plt.savefig("simulationimages/reward_convergence.png", dpi=300, bbox_inches="tight")
+print(f"\nPlot saved to simulationimages/reward_convergence.png")
 print(Q)
 plt.show()
+
 
