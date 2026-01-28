@@ -1,52 +1,48 @@
-import math
-import simpy 
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 
 class wirelessPowerEnv(gym.Env):
-    def __init__(self):
+    def __init__(self , seed=42):
         super().__init__()
- # -------- Action space --------
-# 0: low power, 1: medium power, 2: high power
- # ------------- observations-------------
- # channel params: 0: low, 1: medium, 2: high
- # interference params: 0: low, 1: high
-        self.action_space = spaces.Discrete(3)
-        self.observation_space = spaces.MultiDiscrete([3, 2])
-        self.power_levels = np.array([0.1, 0.5, 1.0])
+        self.power_levels = np.array([0.1,0.2,0.3,0.4,0.5])
+        self.action_space = spaces.Discrete(len(self.power_levels)) # choose power index
+        self.observation_space = spaces.Box(
+            low = 0.0 , high= 1.0 , shape = (2,) , dtype= np.float32
+        )
         self.noise = 0.1
-        self.lamda_power = 0.1
-        self.state = None
+        self.lamda_pen = 0.2
+        self.seed = seed
+        self.np_random , _ = gym.utils.seeding.np_random(seed)
 
-    def reset(self, seed=None, options=None):
-        super().reset(seed=seed)
-        channel = np.random.randint(0, 3)
-        interference = np.random.randint(0,2)
 
-        self.state = np.array([channel , interference ], dtype=np.int32)
-        return self.state , {}
-    def step(self , action):
+    def reset(self , seed = None , options = None):
+        if seed is not None:
+            self.np_random , _ = gym.utils.seeding.np_random(seed)
+
+        self.channel_gain = self.np_random.uniform(0.1 , 1.0)
+        self.interference = self.np_random.uniform(0.1 , 1.0)
+
+        state = np.array([self.channel_gain , self.interference] , dtype=np.float32)
+
+        return state , {}
+
+
+    def step(self, action):
         power = self.power_levels[action]
 
-        #####--------- Channel fading -------------######
-        h = np.random.exponential(scale=0.1)
+        sinr = (power * self.channel_gain) / (self.interference + self.noise)
+        reward = np.log2(1 + sinr) - self.lamda_pen * power
 
-        IP = 0.1 if self.state[1]== 0 else 0.5
+        self.channel_gain = self.np_random.uniform(0.1, 1.0)
+        self.interference = self.np_random.uniform(0.1, 1.0)
 
-        SINR = (power * h) / (self.noise + IP) 
+        next_state = np.array(
+            [self.channel_gain, self.interference], dtype=np.float32
+        )
 
-        throughput = np.log2(1 + SINR)
-         #### -------  Reward Function ------#####
-        reward =  throughput - self.lamda_power * power
-
-          ########## ---- next state --------#####
-        next_channel = np.random.randint(0, 3)
-        next_interference = np.random.randint(0, 2)
-        self.state = np.array([next_channel, next_interference], dtype=np.int32)
-
-        # (no terminal state)
         terminated = False
         truncated = False
 
-        return self.state, reward, terminated, truncated, {}
+        return next_state, reward, terminated, truncated, {}
+
