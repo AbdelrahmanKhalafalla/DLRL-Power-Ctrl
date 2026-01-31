@@ -6,6 +6,7 @@ import tensorflow as tf
 from tensorflow.keras import layers, models, optimizers
 from collections import deque
 import matplotlib.pyplot as plt
+import os
 
 # --- Reproducibility ---
 random_seed = 42
@@ -19,7 +20,7 @@ max_step = 20  # Increased slightly to give the agent more time to learn
 target_update_freq = 10
 gamma = 0.95
 learning_rate = 0.001 # Reduced from 0.1 to 0.001 for stability
-epsilon_start = 0.001
+epsilon_start = 1.0
 epsilon_decay = 0.995
 epsilon_min = 0.01
 batch_size = 64
@@ -130,3 +131,12 @@ plt.xlabel("Episode")
 plt.ylabel("Reward")
 plt.legend()
 plt.show()
+
+save_dir = r"C:\Users\abdel\OneDrive\Desktop\Wireless Systems\DLRL-Power-Ctrl\simulationImages\DQN"
+os.makedirs(save_dir, exist_ok=True)
+
+plot_path = os.path.join(save_dir, "DQN_model_500_episodes.png")
+plt.savefig(plot_path, dpi=300, bbox_inches="tight")
+plt.close()
+
+print(f"Plot saved at: {plot_path}")
