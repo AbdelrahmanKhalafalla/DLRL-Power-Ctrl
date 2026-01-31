@@ -40,7 +40,7 @@ epsilon = 1.0         # exploration rate
 epsilon_decay = 0.995
 epsilon_min = 0.01
 
-EPISODES = 500
+EPISODES = 1000
 MAX_STEPS = 50
 
 rewards_per_episode = []
@@ -97,7 +97,7 @@ plt.legend()
 save_dir = r"C:\Users\abdel\OneDrive\Desktop\Wireless Systems\DLRL-Power-Ctrl\simulationImages\Q-Learning"
 os.makedirs(save_dir, exist_ok=True)
 
-plot_path = os.path.join(save_dir, "Moving_Average_Reward_500_episodes.png")
+plot_path = os.path.join(save_dir, "Moving_Average_Reward_1000_episodes.png")
 plt.savefig(plot_path, dpi=300, bbox_inches="tight")
 plt.close()
 

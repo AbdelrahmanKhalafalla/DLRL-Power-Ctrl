@@ -130,13 +130,16 @@ plt.plot(range(9, episodes), moving_avg_history, label="10-Ep Moving Avg", color
 plt.xlabel("Episode")
 plt.ylabel("Reward")
 plt.legend()
-plt.show()
 
 save_dir = r"C:\Users\abdel\OneDrive\Desktop\Wireless Systems\DLRL-Power-Ctrl\simulationImages\DQN"
 os.makedirs(save_dir, exist_ok=True)
 
 plot_path = os.path.join(save_dir, "DQN_model_500_episodes.png")
+
 plt.savefig(plot_path, dpi=300, bbox_inches="tight")
+
+plt.show()
+
 plt.close()
 
 print(f"Plot saved at: {plot_path}")
