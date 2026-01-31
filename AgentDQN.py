@@ -1,6 +1,7 @@
 from singleLinEnv_DQN import DQN_Env
 import gymnasium as gym
 import numpy as np
+import pandas as pd
 import random
 import tensorflow as tf
 from tensorflow.keras import layers, models, optimizers
@@ -31,10 +32,10 @@ train_freq = 4
 # --- Save/load paths ---
 save_dir = r"C:\Users\abdel\OneDrive\Desktop\Wireless Systems\DLRL-Power-Ctrl\simulationImages\DQN"
 os.makedirs(save_dir, exist_ok=True)
-model_path = os.path.join(save_dir, "dqn_model.h5")
+model_path = os.path.join(save_dir, f"dqn_model.keras") # Updated to .keras
 epsilon_path = os.path.join(save_dir, "epsilon.pkl")
 rewards_path = os.path.join(save_dir, "rewards_history.npy")
-
+csv_log_path = os.path.join(save_dir, "Training_Log.csv")
 
 class DQNagent:
     def __init__(self, state_dim, action_dim, lr=learning_rate):
@@ -58,9 +59,11 @@ class DQNagent:
         # Load model if exists
         if os.path.exists(model_path):
             print("Loading saved model...")
-            self.policy_net = models.load_model(model_path)
-            self.target_net = models.load_model(model_path)
-            # Load epsilon if saved
+            self.policy_net = models.load_model(model_path, compile=False)
+            self.policy_net.compile(optimizer=optimizers.Adam(learning_rate=self.lr), loss="mse")
+            self.target_net = models.load_model(model_path, compile=False)
+            self.target_net.compile(optimizer=optimizers.Adam(learning_rate=self.lr), loss="mse")
+            
             if os.path.exists(epsilon_path):
                 with open(epsilon_path, "rb") as f:
                     self.epsilon = pickle.load(f)
@@ -109,22 +112,23 @@ class DQNagent:
     def decay_epsilon(self):
         self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
 
-
 # --- Training Loop ---
 env = DQN_Env()
 agent = DQNagent(env.observation_space.shape[0], env.action_space.n, lr=learning_rate)
 rewards_history = []
+log_data_list = []
 
-# Load previous rewards if available
 if os.path.exists(rewards_path):
     rewards_history = list(np.load(rewards_path).tolist())
     print(f"Loaded previous rewards, length={len(rewards_history)}")
 
 moving_avg_history = []
 
+print("Starting Training...")
 for episode in range(episodes):
     state, _ = env.reset()
     total_reward = 0
+    steps_taken = 0
 
     for step in range(max_step):
         action = agent.action_selection(state)
@@ -134,6 +138,7 @@ for episode in range(episodes):
         agent.store(state, action, reward, next_state, done)
         state = next_state
         total_reward += reward
+        steps_taken += 1
         if done: break
 
     agent.decay_epsilon()
@@ -141,29 +146,54 @@ for episode in range(episodes):
         agent.update_target_network()
 
     rewards_history.append(total_reward)
-
-    # 10-episode moving average
+    
+    # Calculate moving average
     if len(rewards_history) >= 10:
-        moving_avg_history.append(np.mean(rewards_history[-10:]))
+        current_avg = np.mean(rewards_history[-10:])
+        moving_avg_history.append(current_avg)
+    else:
+        current_avg = np.mean(rewards_history)
+
+    # Logging data for CSV
+    log_data_list.append({
+        "Episode": len(rewards_history),
+        "Total_Reward": total_reward,
+        "Steps": steps_taken,
+        "Epsilon": agent.epsilon
+    })
 
     if episode % 50 == 0:
-        print(f"Episode {episode:3d} | Reward: {total_reward:.2f} | Avg (last 10): {np.mean(rewards_history[-10:]):.2f} | Eps: {agent.epsilon:.3f}")
+        print(f"Episode {episode:3d} | Reward: {total_reward:.2f} | Avg (last 10): {current_avg:.2f} | Eps: {agent.epsilon:.3f}")
 
-# --- Save everything ---
+# --- Save Model & Data ---
 agent.policy_net.save(model_path)
 with open(epsilon_path, "wb") as f:
     pickle.dump(agent.epsilon, f)
 np.save(rewards_path, np.array(rewards_history))
-print(f"Model, epsilon, and rewards saved in: {save_dir}")
+
+# Save CSV Log
+df = pd.DataFrame(log_data_list)
+df.to_csv(csv_log_path, index=False)
+
+print(f"Model, rewards, and CSV log saved in: {save_dir}")
 
 # --- Plot ---
-plt.plot(rewards_history, alpha=0.3, label="Raw Reward")
-plt.plot(range(9, len(rewards_history)), moving_avg_history, label="10-Ep Moving Avg", color='red')
+plt.figure(figsize=(10, 6))
+plt.plot(rewards_history, alpha=0.3, label="Raw Reward", color='blue')
+
+# Align moving average correctly on the X-axis
+x_moving_avg = range(len(rewards_history) - len(moving_avg_history), len(rewards_history))
+plt.plot(x_moving_avg, moving_avg_history, label="10-Ep Moving Avg", color='red', linewidth=2)
+
 plt.xlabel("Episode")
 plt.ylabel("Reward")
+plt.title("DQN Training Progress")
 plt.legend()
+plt.grid(True, linestyle='--', alpha=0.6)
+
 plot_path = os.path.join(save_dir, "DQN_training_plot.png")
 plt.savefig(plot_path, dpi=300, bbox_inches="tight")
 plt.show()
 plt.close()
 print(f"Plot saved at: {plot_path}")
+print("############# DONE ###################")
