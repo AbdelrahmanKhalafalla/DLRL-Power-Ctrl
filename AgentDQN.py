@@ -9,6 +9,8 @@ from collections import deque
 import matplotlib.pyplot as plt
 import os
 import pickle
+from baseline import fixed_power_policy , random_power_policy , rule_based_policy
+from evaluate import evaluate_policy
 
 # --- Reproducibility ---
 random_seed = 42
@@ -164,6 +166,55 @@ for episode in range(episodes):
 
     if episode % 50 == 0:
         print(f"Episode {episode:3d} | Reward: {total_reward:.2f} | Avg (last 10): {current_avg:.2f} | Eps: {agent.epsilon:.3f}")
+
+
+    def dqn_policy(agent):
+        def policy(state):
+            return agent.action_selection(state)
+        return policy
+
+agent.epsilon = 0.0
+
+mean_dqn , std_dqn = evaluate_policy(
+        env,
+        dqn_policy(agent),
+        episodes = 100,
+        max_steps = max_step
+    )
+
+
+'Here we will add baseline evalution and them compare it with agent observations so' 
+'we can weather the agent behave normally and the values arfe realisic' 
+
+mean_fixed , std_fixed = evaluate_policy(
+    env,
+    lambda x: fixed_power_policy(x, env.action_space.n),
+)
+
+mean_random , std_random = evaluate_policy(
+    env,
+    lambda x: random_power_policy(x, env.action_space.n),
+)
+
+mean_rule , std_rule = evaluate_policy(
+    env,
+    lambda x: rule_based_policy(x, env.action_space.n),
+)
+
+print(f"Fixed   → {mean_fixed:.2f} ± {std_fixed:.2f}")
+print(f"Random  → {mean_random:.2f} ± {std_random:.2f}")
+print(f"Rule    → {mean_rule:.2f} ± {std_rule:.2f}")
+
+labels = ["DQN" , "Random" , "Rule" , "Fixed"]
+means = [mean_dqn , mean_random , mean_rule , mean_fixed]
+
+plt.figure(figsize=(10,0))
+plt.bar(labels , means)
+plt.ylabel("Average Reward")
+plt.title("Baseline Comparison")
+plt.grid(axis="y", linestyle = "--" , alpha = 0.4 , color = "red")
+plt.show()
+
 
 # --- Save Model & Data ---
 agent.policy_net.save(model_path)
